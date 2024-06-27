@@ -89,4 +89,21 @@ class User:
 class Todo:
     """应用程序"""
     def __init__(self):
-        pass
+        self.users: list[User] = []
+        self.user = None
+
+    def create_user(self):
+        name = input("名称: ")
+        password = input("密码: ")
+        self.users.append(User(name, password))
+
+    def login(self):
+        for i in range(3):
+            name = input("输入用户名")
+            password = input("输入密码: ")
+            for user in self.users:
+                if user.name == name and user.password == password:
+                    print(f"登陆成功!\n你好,{user.name}")
+                    return user
+            print(f"不是一个有效的用户名或密码, 你还有 {2 - i} 次机会")
+        return None
