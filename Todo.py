@@ -41,31 +41,7 @@ class Todo:
         self.root = customtkinter.CTk()
         self.root.geometry('1024x720')
 
-        self.head = customtkinter.CTkFrame(master=self.root)
-        self.head.pack(padx=20, pady=10, fill='both', expand=True)
-
-        self.title = customtkinter.CTkLabel(master=self.head, text='Todo System', font=('Times New Roman', 72), text_color='#555555')
-        self.title.pack(padx=12, pady=20)
-
-        self.greeting = customtkinter.CTkLabel(master=self.head, text=f'{rand_greeting()}', font=('Times New Roman', 18), text_color='#BBBBDD')
-        self.greeting.pack(padx=12, pady=10)
-
-        self.loginButton = customtkinter.CTkButton(master=self.head, text='Login', font=('Times New Roman', 20), command=lambda: self.change('login'))
-        self.loginButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
-
-        self.registerButton = customtkinter.CTkButton(master=self.head, text='Register', font=('Times New Roman', 20), command=lambda: self.change('register'))
-        self.registerButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
-
-        self.mainButton = customtkinter.CTkButton(master=self.head, text='Todo', font=('Times New Roman', 20), command=lambda: self.change('main'))
-        self.mainButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
-
-        self.returnButton = customtkinter.CTkButton(master=self.head, text='Return', font=('Times New Roman', 20), command=lambda : self.change())
-        self.returnButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
-
-        """Body"""
-        self.body = customtkinter.CTkFrame(master=self.root)
-        self.body.pack(padx=20, pady=10, fill='both', expand=True)
-
+        self.tk_init()
 
     def run(self):
         self.root.mainloop()
@@ -78,7 +54,6 @@ class Todo:
             self.tk_login()
         if self.flag['register']:
             self.tk_register()
-
 
     def change(self, chance=None):
         try:
@@ -102,6 +77,9 @@ class Todo:
         self.title = customtkinter.CTkLabel(master=self.head, text='Todo System', font=('Times New Roman', 72), text_color='#555555')
         self.title.pack(padx=12, pady=20)
 
+        self.logined = customtkinter.CTkLabel(master=self.head, text='Unlogged', font=('Times New Roman', 30), text_color='#8888BB')
+        self.logined.pack(padx=12, pady=20)
+
         self.greeting = customtkinter.CTkLabel(master=self.head, text=f'{rand_greeting()}', font=('Times New Roman', 18), text_color='#BBBBDD')
         self.greeting.pack(padx=12, pady=10)
 
@@ -121,7 +99,6 @@ class Todo:
         self.body = customtkinter.CTkFrame(master=self.root)
         self.body.pack(padx=20, pady=10, fill='both', expand=True)
 
-
     def tk_login(self):
         self.loginText = customtkinter.CTkLabel(master=self.body, text=f'Login', font=('Times New Roman', 50), text_color='#555555')
         self.loginText.pack(padx=12, pady=20)
@@ -132,12 +109,12 @@ class Todo:
         self.loginPassword = customtkinter.CTkEntry(master=self.body, placeholder_text='Enter Your Password', font=('Times New Roman', 30), width=500)
         self.loginPassword.pack(padx=40, pady=20)
 
-        self.loginbutton = customtkinter.CTkButton(master=self.body, text='Login', font=('Times New Roman', 20), command=self.update)
-        self.loginbutton.pack(padx=20, pady=20)
+        self.bodyLoginButton = customtkinter.CTkButton(master=self.body, text='Login', font=('Times New Roman', 20), command=self.login)
+        self.bodyLoginButton.pack(padx=20, pady=20)
 
     def tk_register(self):
-        self.registerText = customtkinter.CTkLabel(master=self.body, text=f'Register', font=('Times New Roman', 50), text_color='#555555')
-        self.registerText.pack(padx=12, pady=20)
+        self.registerSuccess = customtkinter.CTkLabel(master=self.body, text=f'Register', font=('Times New Roman', 50), text_color='#555555')
+        self.registerSuccess.pack(padx=12, pady=20)
 
         self.registerName = customtkinter.CTkEntry(master=self.body, placeholder_text='Enter Your UserName', font=('Times New Roman', 30), width=500)
         self.registerName.pack(padx=40, pady=20)
@@ -145,9 +122,8 @@ class Todo:
         self.registerPassword = customtkinter.CTkEntry(master=self.body, placeholder_text='Enter Your Password',  font=('Times New Roman', 30), width=500)
         self.registerPassword.pack(padx=40, pady=20)
 
-        self.registerbutton = customtkinter.CTkButton(master=self.body, text='Register', font=('Times New Roman', 20), command=self.create_user)
-        self.registerbutton.pack(padx=20, pady=20)
-
+        self.bodyRegisterButton = customtkinter.CTkButton(master=self.body, text='Register', font=('Times New Roman', 20), command=self.create_user)
+        self.bodyRegisterButton.pack(padx=20, pady=20)
 
     def create_user(self):
         if self.flag['register']:
@@ -155,19 +131,30 @@ class Todo:
             password = self.registerPassword.get()
             self.users.append(User(name, password))
             print(self.users)
+            self.bodyRegisterButton.destroy()
+            registerSuccess = customtkinter.CTkLabel(master=self.body, text=f'Success', font=('Times New Roman', 40), text_color='#EEEEEE')
+            registerSuccess.pack(padx=12, pady=20)
         else:
-            print('Not Login')
+            print('Not Register')
 
     def login(self):
-        for i in range(3):
-            name = input("输入用户名 ")
-            password = input("输入密码 ")
+        if self.flag['login']:
+            name = self.loginName.get()
+            password = self.loginPassword.get()
             for user in self.users:
-                if user.name == name and user.password == password:
-                    print(f"登陆成功!\n你好,{user.name}")
-                    return user
-            print(f"不是一个有效的用户名或密码, 你还有 {2 - i} 次机会")
-        return None
+                if name == user.name and password == user.password:
+                    self.user = user
+                    self.bodyLoginButton.destroy()
+                    loginSuccess = customtkinter.CTkLabel(master=self.body, text='Success', font=('Times New Roman', 40), text_color='#EEEEEE')
+                    loginSuccess.pack(padx=12, pady=20)
+                    self.logined.configure(text=f'Welcome,{self.user.name}!')
+                    print(user)
+                else:
+                    loginFailed = customtkinter.CTkLabel(master=self.body, text='UserName or Password isnt right, please try again', font=('Times New Roman', 40), text_color='#EEEEEE')
+                    loginFailed.pack(padx=12, pady=20)
+                    print("failed")
+        else:
+            print("Not login")
 
 
 if __name__ == '__main__':
