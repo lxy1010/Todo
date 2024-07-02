@@ -22,14 +22,15 @@
 """
 
 import customtkinter
+import json
 
 from User import User
 from greeting import rand_greeting
 
 
 class Todo:
-    """应用程序"""
     def __init__(self):
+        self.data = self.read()
         self.users: list[User] = []
         self.user = None
 
@@ -43,6 +44,11 @@ class Todo:
 
         self.tk_init()
 
+    def read(self):
+        with open('data/data.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+
     def run(self):
         self.root.mainloop()
 
@@ -54,6 +60,8 @@ class Todo:
             self.tk_login()
         if self.flag['register']:
             self.tk_register()
+        if self.flag['main']:
+            self.tk_todo()
 
     def change(self, chance=None):
         try:
@@ -125,17 +133,82 @@ class Todo:
         self.bodyRegisterButton = customtkinter.CTkButton(master=self.body, text='Register', font=('Times New Roman', 20), command=self.create_user)
         self.bodyRegisterButton.pack(padx=20, pady=20)
 
+    def tk_todo(self):
+        self.grid = customtkinter.CTkTextbox(master=self.body, width=950, height=200, font=('Times New Roman', 20))
+        self.grid.pack(padx=20, pady=20)
+        for i in range(len(self.user.todolist.List)):
+            self.grid.insert(customtkinter.END, text=f'Todo {i + 1}:  {self.user.todolist.List[i].name}\t\t{self.user.todolist.List[i].describe}\n')
+            # do = customtkinter.CTkLabel(master=self.body, text=f'odo {i + 1}:  {self.user.todolist.List[i].name}', font=('Times New Roman', 20), text_color='#FFFFFF')
+            # do.pack(padx=20, pady=10, fill='both', expand=True)
+        self.createNew = customtkinter.CTkButton(master=self.body, text='Create New', font=('Times New Roman', 30), command=self.tk_create_new_todo)
+        self.createNew.pack(padx=5, pady=5)
+
+    def tk_create_new_todo(self):
+        self.grid.destroy()
+        self.createNew.destroy()
+        self.NewFrame = customtkinter.CTkFrame(master=self.body)
+        self.NewFrame.pack(padx=5, pady=5, fill='both', expand=True)
+
+        self.nameText = customtkinter.CTkLabel(master=self.NewFrame, text='Name', font=('Times New Roman', 30))
+        self.nameText.grid(row=0, column=0, padx=5, pady=5)
+        self.newName = customtkinter.CTkEntry(master=self.NewFrame, placeholder_text='Enter Name', font=('Times New Roman', 30), width=400)
+        self.newName.grid(row=0, column=1, padx=5, pady=5)
+
+        self.describeText = customtkinter.CTkLabel(master=self.NewFrame, text='Description', font=('Times New Roman', 30))
+        self.describeText.grid(row=1, column=0, padx=5, pady=5)
+        self.newDescription = customtkinter.CTkTextbox(master=self.NewFrame, width=600, height=100, font=('Times New Roman', 20))
+        self.newDescription.grid(row=1, column=1, padx=5, pady=5)
+
+        self.setTimeFrame = customtkinter.CTkFrame(master=self.body)
+        self.setTimeFrame.pack(fill='both')
+
+        self.newYearText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Year', font=('Times New Roman', 30))
+        self.newYearText.grid(row=0, column=0, padx=5, pady=5)
+        self.newYear = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(2024, 2050)])
+        self.newYear.grid(row=0, column=1, padx=5, pady=5)
+
+        self.newMonthText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Month', font=('Times New Roman', 30))
+        self.newMonthText.grid(row=0, column=2, padx=5, pady=5)
+        self.newMonth = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(1, 13)])
+        self.newMonth.grid(row=0, column=3, padx=5, pady=5)
+
+        self.newDayText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Day', font=('Times New Roman', 30))
+        self.newDayText.grid(row=0, column=4, padx=5, pady=5)
+        self.newDay = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(1, 32)])
+        self.newDay.grid(row=0, column=5, padx=5, pady=5)
+
+        self.newHourText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Hour', font=('Times New Roman', 30))
+        self.newHourText.grid(row=1, column=0, padx=5, pady=5)
+        self.newHour = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(0, 24)])
+        self.newHour.grid(row=1, column=1, padx=5, pady=5)
+
+        self.newMinuteText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Minute', font=('Times New Roman', 30))
+        self.newMinuteText.grid(row=1, column=2, padx=5, pady=5)
+        self.newMinute = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(0, 60)])
+        self.newMinute.grid(row=1, column=3, padx=5, pady=5)
+
+        self.newSecondText = customtkinter.CTkLabel(master=self.setTimeFrame, text='Second', font=('Times New Roman', 30))
+        self.newSecondText.grid(row=1, column=4, padx=5, pady=5)
+        self.newSecond = customtkinter.CTkOptionMenu(master=self.setTimeFrame, values=[str(i) for i in range(0, 60)])
+        self.newSecond.grid(row=1, column=5, padx=5, pady=5)
+
+        self.commitTime = customtkinter.CTkButton(master=self.body, text='Commit', font=('Times New Roman', 30), command=self.create_new_todo)
+        self.commitTime.pack(padx=5, pady=5)
+    def create_new_todo(self):
+        self.user.todolist.add_todo(self.newName.get(), self.newDescription.get('1.0'), int(self.newYear.get()), int(self.newMonth.get()), int(self.newDay.get()), int(self.newHour.get()), int(self.newMinute.get()), int(self.newSecond.get()))
+        print(self.newName.get(), self.newDescription.get('1.0', customtkinter.END), int(self.newYear.get()), int(self.newMonth.get()), int(self.newDay.get()), int(self.newHour.get()), int(self.newMinute.get()), int(self.newSecond.get()))
+        print('Done')
+
     def create_user(self):
-        if self.flag['register']:
-            name = self.registerName.get()
-            password = self.registerPassword.get()
-            self.users.append(User(name, password))
-            print(self.users)
-            self.bodyRegisterButton.destroy()
-            registerSuccess = customtkinter.CTkLabel(master=self.body, text=f'Success', font=('Times New Roman', 40), text_color='#EEEEEE')
-            registerSuccess.pack(padx=12, pady=20)
-        else:
-            print('Not Register')
+        assert self.flag['register']
+        name = self.registerName.get()
+        password = self.registerPassword.get()
+        self.users.append(User(name, password))
+        self.data[name] = {"password": password, "todo":[]}
+        print(self.users)
+        self.bodyRegisterButton.destroy()
+        registerSuccess = customtkinter.CTkLabel(master=self.body, text=f'Success', font=('Times New Roman', 40), text_color='#EEEEEE')
+        registerSuccess.pack(padx=12, pady=20)
 
     def login(self):
         if self.flag['login']:

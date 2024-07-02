@@ -1,0 +1,19 @@
+{
+  "admin": {
+    "password": 12345678,
+    "todo": [
+      {
+        "name": "something",
+        "describe": "what should I do",
+        "deadline": {
+          "year": 2024,
+          "month": 10,
+          "day": 10,
+          "hour": 0,
+          "minute": 0,
+          "second": 0
+        }
+      }
+    ]
+  }
+}
