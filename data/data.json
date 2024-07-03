@@ -1,6 +1,6 @@
 {
   "admin": {
-    "password": 12345678,
+    "password": "12345678",
     "todo": [
       {
         "name": "something",
@@ -11,6 +11,35 @@
           "day": 10,
           "hour": 0,
           "minute": 0,
+          "second": 0
+        }
+      },
+      {
+        "name": "hey",
+        "describe": "hello \u4e2d\u56fd",
+        "deadline": {
+          "year": 2024,
+          "month": 1,
+          "day": 1,
+          "hour": 0,
+          "minute": 0,
+          "second": 0
+        }
+      }
+    ]
+  },
+  "": {
+    "password": "",
+    "todo": [
+      {
+        "name": "\u4f60\u597d",
+        "describe": "\u8fd9\u662f\u4e00\u6bb5\u793a\u8303Todo",
+        "deadline": {
+          "year": 2024,
+          "month": 7,
+          "day": 2,
+          "hour": 13,
+          "minute": 13,
           "second": 0
         }
       }

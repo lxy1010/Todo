@@ -20,21 +20,23 @@
 添加闹钟
 添加GUI
 """
-
+import datetime
+from plyer import notification
 import customtkinter
 import json
+from tkinter.messagebox import askyesno
 
-from User import User
+# from User import User
 from greeting import rand_greeting
 
 
 class Todo:
     def __init__(self):
         self.data = self.read()
-        self.users: list[User] = []
+        # self.users: list[User] = []
         self.user = None
 
-        self.flag = {'login': True, 'register': False, 'main': False}
+        self.flag = {'login': False, 'register': False, 'main': False}
 
         customtkinter.set_appearance_mode('dark')
         customtkinter.set_default_color_theme('blue')
@@ -44,10 +46,25 @@ class Todo:
 
         self.tk_init()
 
-    def read(self):
+    @staticmethod
+    def notify_user(title, message):
+        # 显示通知
+        notification.notify(
+            title=title,
+            message=message,
+            app_icon=None,  # 如果需要的话，可以指定图标路径
+            timeout=10  # 通知显示的时间，单位为秒
+        )
+
+    @staticmethod
+    def read() -> dict:
         with open('data/data.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
         return data
+
+    def write(self):
+        with open('data/data.json', 'w', encoding='utf-8') as f:
+            json.dump(self.data, f, indent=2)
 
     def run(self):
         self.root.mainloop()
@@ -64,19 +81,19 @@ class Todo:
             self.tk_todo()
 
     def change(self, chance=None):
-        try:
-            if chance is None:
-                for k, v in self.flag.items():
-                    self.flag[k] = False
-                self.update()
-                return
-            self.flag[chance] = True
+    # try:
+        if chance is None:
             for k, v in self.flag.items():
                 self.flag[k] = False
-            self.flag[chance] = True
             self.update()
-        except KeyError:
-            print("Error: Key is wrong")
+            return
+        self.flag[chance] = True
+        for k, v in self.flag.items():
+            self.flag[k] = False
+        self.flag[chance] = True
+        self.update()
+        # except KeyError:
+        #     print("Error: Key is wrong")
 
     def tk_init(self):
         self.head = customtkinter.CTkFrame(master=self.root)
@@ -97,7 +114,7 @@ class Todo:
         self.registerButton = customtkinter.CTkButton(master=self.head, text='Register', font=('Times New Roman', 20), command=lambda : self.change('register'))
         self.registerButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
 
-        self.mainButton = customtkinter.CTkButton(master=self.head, text='Todo', font=('Times New Roman', 20), command=lambda : self.change('main'))
+        self.mainButton = customtkinter.CTkButton(master=self.head, text='Todo', font=('Times New Roman', 20), command=lambda : self.change('main'), state='disabled' if self.user is None else 'normal')
         self.mainButton.pack(side=customtkinter.LEFT, padx=20, pady=20)
 
         self.returnButton = customtkinter.CTkButton(master=self.head, text='Return', font=('Times New Roman', 20), command=lambda : self.change())
@@ -136,16 +153,41 @@ class Todo:
     def tk_todo(self):
         self.grid = customtkinter.CTkTextbox(master=self.body, width=950, height=200, font=('Times New Roman', 20))
         self.grid.pack(padx=20, pady=20)
-        for i in range(len(self.user.todolist.List)):
-            self.grid.insert(customtkinter.END, text=f'Todo {i + 1}:  {self.user.todolist.List[i].name}\t\t{self.user.todolist.List[i].describe}\n')
+        self.count_expried = []
+        for i in range(len(self.data[self.user]["todo"])):
+            deadlineDict = self.data[self.user]["todo"][i]["deadline"]
+            deadline = datetime.datetime(deadlineDict['year'], deadlineDict['month'], deadlineDict['day'], deadlineDict['hour'], deadlineDict['minute'], deadlineDict['second'])
+            now = datetime.datetime.now()
+            self.grid.insert(customtkinter.END, text=f'Todo {i + 1}:  {self.data[self.user]["todo"][i]["name"]}\t\t{self.data[self.user]["todo"][i]["describe"]}\t\t{deadline}\t\t{"Expired" if deadline < now else "Undue"}\n')
+            if deadline < now:
+                self.count_expried.append(self.data[self.user]["todo"][i]["name"])
             # do = customtkinter.CTkLabel(master=self.body, text=f'odo {i + 1}:  {self.user.todolist.List[i].name}', font=('Times New Roman', 20), text_color='#FFFFFF')
             # do.pack(padx=20, pady=10, fill='both', expand=True)
-        self.createNew = customtkinter.CTkButton(master=self.body, text='Create New', font=('Times New Roman', 30), command=self.tk_create_new_todo)
-        self.createNew.pack(padx=5, pady=5)
+        if self.count_expried:
+            self.notify_user(f"您有 {len(self.count_expried)} 项待办逾期未处理", f"\t逾期未处理待办:     {'    '.join(self.count_expried)}")
+        self.createDeleteFrame = customtkinter.CTkFrame(master=self.body)
+        self.createDeleteFrame.pack(padx=5, pady=5)
+
+        self.createNew = customtkinter.CTkButton(master=self.createDeleteFrame, text='Create New', font=('Times New Roman', 30), command=self.tk_create_new_todo)
+        self.createNew.grid(row=0, column=0, padx=5, pady=5)
+        self.DeleteTodo = customtkinter.CTkButton(master=self.createDeleteFrame, text='Delete Todo', font=('Times New Roman', 30), command=self.tk_delete_todo)
+        self.DeleteTodo.grid(row=0, column=1, padx=5, pady=5)
+
+    def tk_delete_todo(self):
+        self.grid.destroy()
+        self.createDeleteFrame.destroy()
+
+        self.DeleteText = customtkinter.CTkLabel(master=self.body, text='Choose Todo you wanna DELETE', font=('Times New Roman', 30))
+        self.DeleteText.pack(padx=10, pady=10)
+        names = [self.data[self.user]["todo"][i]["name"] for i in range(len(self.data[self.user]["todo"]))]
+        self.deleteMenu = customtkinter.CTkOptionMenu(master=self.body, values=names)
+        self.deleteMenu.pack(padx=10, pady=10)
+        self.chosen = customtkinter.CTkButton(master=self.body, text='Delete', font=('Times New Roman', 30), command=lambda : self.delete_todo(names.index(self.deleteMenu.get())))
+        self.chosen.pack(padx=10, pady=10)
 
     def tk_create_new_todo(self):
         self.grid.destroy()
-        self.createNew.destroy()
+        self.createDeleteFrame.destroy()
         self.NewFrame = customtkinter.CTkFrame(master=self.body)
         self.NewFrame.pack(padx=5, pady=5, fill='both', expand=True)
 
@@ -194,40 +236,61 @@ class Todo:
 
         self.commitTime = customtkinter.CTkButton(master=self.body, text='Commit', font=('Times New Roman', 30), command=self.create_new_todo)
         self.commitTime.pack(padx=5, pady=5)
+
     def create_new_todo(self):
-        self.user.todolist.add_todo(self.newName.get(), self.newDescription.get('1.0'), int(self.newYear.get()), int(self.newMonth.get()), int(self.newDay.get()), int(self.newHour.get()), int(self.newMinute.get()), int(self.newSecond.get()))
+        self.data[self.user]['todo'].append(
+            {"name": self.newName.get(),
+             "describe": self.newDescription.get('1.0', customtkinter.END).rstrip(),
+             "deadline": {
+                 "year": int(self.newYear.get()),
+                 "month": int(self.newMonth.get()),
+                 "day": int(self.newDay.get()),
+                 "hour": int(self.newHour.get()),
+                 "minute": int(self.newMinute.get()),
+                 "second": int(self.newSecond.get())
+             }}
+        )
+        self.write()
         print(self.newName.get(), self.newDescription.get('1.0', customtkinter.END), int(self.newYear.get()), int(self.newMonth.get()), int(self.newDay.get()), int(self.newHour.get()), int(self.newMinute.get()), int(self.newSecond.get()))
+        self.update()
         print('Done')
+
+    def delete_todo(self, index):
+        if askyesno("删除 Todo", "你真的想要删掉这条待办吗?  你将失去它很久 (真的很久!"):
+            self.data[self.user]['todo'].pop(index)
+            self.write()
+        self.update()
 
     def create_user(self):
         assert self.flag['register']
         name = self.registerName.get()
         password = self.registerPassword.get()
-        self.users.append(User(name, password))
+        # self.users.append(User(name, password))
         self.data[name] = {"password": password, "todo":[]}
-        print(self.users)
+        self.write()
+        # print(self.users)
         self.bodyRegisterButton.destroy()
         registerSuccess = customtkinter.CTkLabel(master=self.body, text=f'Success', font=('Times New Roman', 40), text_color='#EEEEEE')
         registerSuccess.pack(padx=12, pady=20)
 
     def login(self):
-        if self.flag['login']:
-            name = self.loginName.get()
-            password = self.loginPassword.get()
-            for user in self.users:
-                if name == user.name and password == user.password:
-                    self.user = user
-                    self.bodyLoginButton.destroy()
-                    loginSuccess = customtkinter.CTkLabel(master=self.body, text='Success', font=('Times New Roman', 40), text_color='#EEEEEE')
-                    loginSuccess.pack(padx=12, pady=20)
-                    self.logined.configure(text=f'Welcome,{self.user.name}!')
-                    print(user)
-                else:
-                    loginFailed = customtkinter.CTkLabel(master=self.body, text='UserName or Password isnt right, please try again', font=('Times New Roman', 40), text_color='#EEEEEE')
-                    loginFailed.pack(padx=12, pady=20)
-                    print("failed")
+        assert self.flag['login']
+        name = self.loginName.get()
+        password = self.loginPassword.get()
+        for user in self.data.keys():
+            if name == user and password == self.data[user]['password']:
+                self.user = user
+                self.bodyLoginButton.destroy()
+                loginSuccess = customtkinter.CTkLabel(master=self.body, text='Success', font=('Times New Roman', 40), text_color='#EEEEEE')
+                loginSuccess.pack(padx=12, pady=20)
+                self.logined.configure(text=f'Welcome,{self.user}!')
+                self.mainButton.configure(state=customtkinter.NORMAL)
+                print(user)
+                break
         else:
-            print("Not login")
+            loginFailed = customtkinter.CTkLabel(master=self.body, text="UserName or Password isn't right, please try again", font=('Times New Roman', 40), text_color='#EEEEEE')
+            loginFailed.pack(padx=12, pady=20)
+            print("failed")
 
 
 if __name__ == '__main__':
