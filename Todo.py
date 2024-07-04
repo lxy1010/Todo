@@ -162,8 +162,6 @@ class Todo:
                 self.count_expried.append(self.data[self.user]["todo"][i]["name"])
             # do = customtkinter.CTkLabel(master=self.body, text=f'odo {i + 1}:  {self.user.todolist.List[i].name}', font=('Times New Roman', 20), text_color='#FFFFFF')
             # do.pack(padx=20, pady=10, fill='both', expand=True)
-        if self.count_expried:
-            self.notify_user(f"您有 {len(self.count_expried)} 项待办逾期未处理", f"\t逾期未处理待办:     {'    '.join(self.count_expried)}")
         self.cdsFrame = customtkinter.CTkFrame(master=self.body)
         self.cdsFrame.pack(padx=5, pady=5)
 
@@ -252,6 +250,17 @@ class Todo:
         self.commitTime = customtkinter.CTkButton(master=self.body, text='Commit', font=('Times New Roman', 30), command=self.create_new_todo)
         self.commitTime.pack(padx=5, pady=5)
 
+    def notice(self):
+        count_expried = []
+        for i in range(len(self.data[self.user]["todo"])):
+            deadlineDict = self.data[self.user]["todo"][i]["deadline"]
+            deadline = datetime.datetime(deadlineDict['year'], deadlineDict['month'], deadlineDict['day'], deadlineDict['hour'], deadlineDict['minute'], deadlineDict['second'])
+            now = datetime.datetime.now()
+            if deadline < now:
+                count_expried.append(self.data[self.user]["todo"][i]["name"])
+        if count_expried:
+            self.notify_user(f"您有 {len(count_expried)} 项待办逾期未处理", f"\t逾期未处理待办:     {'    '.join(count_expried)}")
+
     def set_status(self, index, status):
         self.data[self.user]['todo'][index]['status'] = status
         self.write()
@@ -306,7 +315,8 @@ class Todo:
                 loginSuccess.pack(padx=12, pady=20)
                 self.logined.configure(text=f'Welcome, {self.user}!')
                 self.mainButton.configure(state=customtkinter.NORMAL)
-                print(user)
+                self.notice()
+                # print(user)
                 break
         else:
             loginFailed = customtkinter.CTkLabel(master=self.body, text="UserName or Password isn't right, please try again", font=('Times New Roman', 40), text_color='#EEEEEE')
