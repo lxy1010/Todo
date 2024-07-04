@@ -26,7 +26,6 @@ import customtkinter
 import json
 from tkinter.messagebox import askyesno
 
-# from User import User
 from greeting import rand_greeting
 
 
@@ -158,24 +157,40 @@ class Todo:
             deadlineDict = self.data[self.user]["todo"][i]["deadline"]
             deadline = datetime.datetime(deadlineDict['year'], deadlineDict['month'], deadlineDict['day'], deadlineDict['hour'], deadlineDict['minute'], deadlineDict['second'])
             now = datetime.datetime.now()
-            self.grid.insert(customtkinter.END, text=f'Todo {i + 1}:  {self.data[self.user]["todo"][i]["name"]}\t\t{self.data[self.user]["todo"][i]["describe"]}\t\t{deadline}\t\t{"Expired" if deadline < now else "Undue"}\n')
+            self.grid.insert(customtkinter.END, text=f'Todo {i + 1}:  {self.data[self.user]["todo"][i]["name"]}\t\t{self.data[self.user]["todo"][i]["describe"]}\t\t{deadline}\t\t{"Expired" if deadline < now else "Undue"}\t\t{"Completed" if self.data[self.user]["todo"][i]["status"] else "Uncompleted"}\n')
             if deadline < now:
                 self.count_expried.append(self.data[self.user]["todo"][i]["name"])
             # do = customtkinter.CTkLabel(master=self.body, text=f'odo {i + 1}:  {self.user.todolist.List[i].name}', font=('Times New Roman', 20), text_color='#FFFFFF')
             # do.pack(padx=20, pady=10, fill='both', expand=True)
         if self.count_expried:
             self.notify_user(f"您有 {len(self.count_expried)} 项待办逾期未处理", f"\t逾期未处理待办:     {'    '.join(self.count_expried)}")
-        self.createDeleteFrame = customtkinter.CTkFrame(master=self.body)
-        self.createDeleteFrame.pack(padx=5, pady=5)
+        self.cdsFrame = customtkinter.CTkFrame(master=self.body)
+        self.cdsFrame.pack(padx=5, pady=5)
 
-        self.createNew = customtkinter.CTkButton(master=self.createDeleteFrame, text='Create New', font=('Times New Roman', 30), command=self.tk_create_new_todo)
+        self.createNew = customtkinter.CTkButton(master=self.cdsFrame, text='Create New', font=('Times New Roman', 30), command=self.tk_create_new_todo)
         self.createNew.grid(row=0, column=0, padx=5, pady=5)
-        self.DeleteTodo = customtkinter.CTkButton(master=self.createDeleteFrame, text='Delete Todo', font=('Times New Roman', 30), command=self.tk_delete_todo)
+        self.DeleteTodo = customtkinter.CTkButton(master=self.cdsFrame, text='Delete Todo', font=('Times New Roman', 30), command=self.tk_delete_todo)
         self.DeleteTodo.grid(row=0, column=1, padx=5, pady=5)
+        self.setStatus = customtkinter.CTkButton(master=self.cdsFrame, text='Set Status', font=('Times New Roman', 30), command=self.tk_set_status)
+        self.setStatus.grid(row=0, column=2, padx=5, pady=5)
+
+    def tk_set_status(self):
+        self.grid.destroy()
+        self.cdsFrame.destroy()
+
+        self.statusText = customtkinter.CTkLabel(master=self.body, text='Choose Todo you wanna Set completion status', font=('Times New Roman', 30))
+        self.statusText.pack(padx=10, pady=10)
+        names = [self.data[self.user]["todo"][i]["name"] for i in range(len(self.data[self.user]["todo"]))]
+        self.nameMenu = customtkinter.CTkOptionMenu(master=self.body, values=names)
+        self.nameMenu.pack(padx=10, pady=10)
+        self.statusMenu = customtkinter.CTkOptionMenu(master=self.body, values=['Completed', 'Uncompleted'])
+        self.statusMenu.pack(padx=10, pady=10)
+        self.chosen = customtkinter.CTkButton(master=self.body, text='Set', font=('Times New Roman', 30), command=lambda: self.set_status(names.index(self.nameMenu.get()), True if self.statusMenu.get() == 'Completed' else False))
+        self.chosen.pack(padx=10, pady=10)
 
     def tk_delete_todo(self):
         self.grid.destroy()
-        self.createDeleteFrame.destroy()
+        self.cdsFrame.destroy()
 
         self.DeleteText = customtkinter.CTkLabel(master=self.body, text='Choose Todo you wanna DELETE', font=('Times New Roman', 30))
         self.DeleteText.pack(padx=10, pady=10)
@@ -187,7 +202,7 @@ class Todo:
 
     def tk_create_new_todo(self):
         self.grid.destroy()
-        self.createDeleteFrame.destroy()
+        self.cdsFrame.destroy()
         self.NewFrame = customtkinter.CTkFrame(master=self.body)
         self.NewFrame.pack(padx=5, pady=5, fill='both', expand=True)
 
@@ -237,6 +252,11 @@ class Todo:
         self.commitTime = customtkinter.CTkButton(master=self.body, text='Commit', font=('Times New Roman', 30), command=self.create_new_todo)
         self.commitTime.pack(padx=5, pady=5)
 
+    def set_status(self, index, status):
+        self.data[self.user]['todo'][index]['status'] = status
+        self.write()
+        self.update()
+
     def create_new_todo(self):
         self.data[self.user]['todo'].append(
             {"name": self.newName.get(),
@@ -248,7 +268,8 @@ class Todo:
                  "hour": int(self.newHour.get()),
                  "minute": int(self.newMinute.get()),
                  "second": int(self.newSecond.get())
-             }}
+             },
+             "status": False}
         )
         self.write()
         print(self.newName.get(), self.newDescription.get('1.0', customtkinter.END), int(self.newYear.get()), int(self.newMonth.get()), int(self.newDay.get()), int(self.newHour.get()), int(self.newMinute.get()), int(self.newSecond.get()))
@@ -283,7 +304,7 @@ class Todo:
                 self.bodyLoginButton.destroy()
                 loginSuccess = customtkinter.CTkLabel(master=self.body, text='Success', font=('Times New Roman', 40), text_color='#EEEEEE')
                 loginSuccess.pack(padx=12, pady=20)
-                self.logined.configure(text=f'Welcome,{self.user}!')
+                self.logined.configure(text=f'Welcome, {self.user}!')
                 self.mainButton.configure(state=customtkinter.NORMAL)
                 print(user)
                 break
